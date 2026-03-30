@@ -1,3 +1,7 @@
+# Stage 1: grab pre-built telegram-bot-api binary
+FROM aiogram/telegram-bot-api:latest AS bot-api
+
+# Stage 2: actual add-on
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
@@ -6,22 +10,10 @@ RUN apk add --no-cache \
     py3-pip \
     ffmpeg \
     supervisor \
-    git \
-    build-base \
-    linux-headers \
-    openssl-dev \
-    zlib-dev
+    libstdc++
 
-# Install telegram-bot-api from source
-RUN apk add --no-cache cmake gperf && \
-    cd /tmp && \
-    git clone --recursive https://github.com/tdlib/telegram-bot-api.git && \
-    cd telegram-bot-api && \
-    mkdir build && cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release .. && \
-    cmake --build . --target install -j$(nproc) && \
-    rm -rf /tmp/telegram-bot-api && \
-    apk del cmake gperf build-base
+# Copy pre-built binary from the aiogram image
+COPY --from=bot-api /usr/local/bin/telegram-bot-api /usr/local/bin/telegram-bot-api
 
 WORKDIR /app
 
