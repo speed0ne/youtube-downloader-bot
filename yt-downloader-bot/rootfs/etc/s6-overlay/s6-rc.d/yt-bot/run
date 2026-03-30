@@ -6,5 +6,7 @@ export LOCAL_API_URL="http://127.0.0.1:8081"
 # Wait for telegram-bot-api to be ready
 sleep 3
 
+bashio::log.info "Starting YouTube Downloader Bot..."
+
 cd /app
 exec python3 -m bot.main
