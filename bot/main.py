@@ -14,17 +14,17 @@ from bot.handlers import handle_message, handle_quality_callback
 _TOKEN_RE = re.compile(r"bot\d+:[A-Za-z0-9_-]+")
 
 
-class TokenRedactFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        record.msg = _TOKEN_RE.sub("bot***:***", str(record.msg))
-        return True
+class RedactFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        msg = super().format(record)
+        return _TOKEN_RE.sub("bot***:***", msg)
 
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
-logging.getLogger("httpx").addFilter(TokenRedactFilter())
+_formatter = RedactFormatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+logging.basicConfig(level=logging.INFO)
+for handler in logging.root.handlers:
+    handler.setFormatter(_formatter)
 logger = logging.getLogger(__name__)
 
 
