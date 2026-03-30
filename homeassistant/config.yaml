@@ -1,0 +1,17 @@
+name: "YouTube Downloader Bot"
+description: "Telegram bot that downloads YouTube videos and sends them to chat"
+version: "1.0.0"
+slug: "yt-downloader-bot"
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+options:
+  bot_token: ""
+  telegram_api_id: ""
+  telegram_api_hash: ""
+schema:
+  bot_token: str
+  telegram_api_id: str
+  telegram_api_hash: str
