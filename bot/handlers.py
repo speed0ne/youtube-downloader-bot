@@ -7,7 +7,7 @@ import shutil
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from bot.downloader import DownloadResult, download, format_size, get_formats
+from bot.downloader import DownloadResult, download, download_audio, format_size, get_formats
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +50,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         callback_data = f"dl:{url_id}:{fmt.height}"
         buttons.append([InlineKeyboardButton(label, callback_data=callback_data)])
 
-    # Add "Best quality" option
+    # Add "Best quality" and "Audio only" options
     buttons.append(
         [InlineKeyboardButton("Best quality", callback_data=f"dl:{url_id}:best")]
     )
+    buttons.append(
+        [InlineKeyboardButton("Audio only (MP3)", callback_data=f"dl:{url_id}:audio")]
+    )
 
     await status_msg.edit_text(
-        "Choose video quality:", reply_markup=InlineKeyboardMarkup(buttons)
+        "Choose format:", reply_markup=InlineKeyboardMarkup(buttons)
     )
 
 
@@ -79,27 +82,43 @@ async def handle_quality_callback(
 
     await query.edit_message_text("Downloading...")
 
+    is_audio = height_str == "audio"
+
     result: DownloadResult | None = None
     try:
-        height = int(height_str) if height_str != "best" else None
-        result = download(url, height)
-        filesize = os.path.getsize(result.filepath)
+        if is_audio:
+            result = download_audio(url)
+        else:
+            height = int(height_str) if height_str != "best" else None
+            result = download(url, height)
 
+        filesize = os.path.getsize(result.filepath)
         await query.edit_message_text(
             f"Uploading ({format_size(filesize)})..."
         )
 
-        with open(result.filepath, "rb") as video_file:
-            await context.bot.send_video(
-                chat_id=query.message.chat_id,
-                video=video_file,
-                duration=result.duration,
-                width=result.width,
-                height=result.height,
-                supports_streaming=True,
-                read_timeout=300,
-                write_timeout=300,
-            )
+        if is_audio:
+            with open(result.filepath, "rb") as audio_file:
+                await context.bot.send_audio(
+                    chat_id=query.message.chat_id,
+                    audio=audio_file,
+                    title=result.title,
+                    duration=result.duration,
+                    read_timeout=300,
+                    write_timeout=300,
+                )
+        else:
+            with open(result.filepath, "rb") as video_file:
+                await context.bot.send_video(
+                    chat_id=query.message.chat_id,
+                    video=video_file,
+                    duration=result.duration,
+                    width=result.width,
+                    height=result.height,
+                    supports_streaming=True,
+                    read_timeout=300,
+                    write_timeout=300,
+                )
 
         await query.edit_message_text("Done!")
 

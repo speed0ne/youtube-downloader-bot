@@ -63,6 +63,41 @@ def format_size(size_bytes: int | None) -> str:
     return f"{size_bytes / (1024 * 1024 * 1024):.1f}GB"
 
 
+def download_audio(url: str) -> DownloadResult:
+    """Download audio only and return the path to an MP3 file."""
+    download_dir = tempfile.mkdtemp(prefix="ytbot_")
+
+    opts = {
+        "format": "bestaudio/best",
+        "outtmpl": os.path.join(download_dir, "%(title).80s.%(ext)s"),
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            },
+        ],
+        "quiet": True,
+        "no_warnings": True,
+    }
+
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+
+        # Find the mp3 file in the download dir
+        for f in os.listdir(download_dir):
+            if f.endswith(".mp3"):
+                return DownloadResult(
+                    filepath=os.path.join(download_dir, f),
+                    duration=info.get("duration"),
+                    width=None,
+                    height=None,
+                    title=info.get("title"),
+                )
+
+    raise FileNotFoundError("Audio extraction failed: no output file found")
+
+
 def download(url: str, height: int | None = None) -> str:
     """Download a video and return the path to the downloaded file.
 
