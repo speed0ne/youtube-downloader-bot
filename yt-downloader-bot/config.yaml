@@ -1,6 +1,6 @@
 name: "YouTube Downloader Bot"
 description: "Telegram bot that downloads YouTube videos and sends them to chat"
-version: "1.0.0"
+version: "0.0.1"
 slug: "yt-downloader-bot"
 arch:
   - amd64
