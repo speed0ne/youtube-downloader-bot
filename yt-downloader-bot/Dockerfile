@@ -6,6 +6,7 @@ RUN apk add --no-cache \
     py3-pip \
     ffmpeg \
     supervisor \
+    git \
     build-base \
     linux-headers \
     openssl-dev \
@@ -24,12 +25,12 @@ RUN apk add --no-cache cmake gperf && \
 
 WORKDIR /app
 
-COPY ../requirements.txt .
+COPY requirements.txt .
 RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
-COPY ../bot/ bot/
-COPY homeassistant/supervisord.conf /etc/supervisord.conf
-COPY homeassistant/run.sh /run.sh
+COPY bot/ bot/
+COPY supervisord.conf /etc/supervisord.conf
+COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
 CMD ["/run.sh"]
