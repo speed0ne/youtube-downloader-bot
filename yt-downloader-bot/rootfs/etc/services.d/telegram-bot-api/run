@@ -1,4 +1,7 @@
-#!/usr/bin/with-contenv bashio
+#!/command/with-contenv bashio
+
+TELEGRAM_API_ID=$(bashio::config 'telegram_api_id')
+TELEGRAM_API_HASH=$(bashio::config 'telegram_api_hash')
 
 exec telegram-bot-api \
     --api-id="${TELEGRAM_API_ID}" \

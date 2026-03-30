@@ -1,4 +1,7 @@
-#!/usr/bin/with-contenv bashio
+#!/command/with-contenv bashio
+
+export BOT_TOKEN=$(bashio::config 'bot_token')
+export LOCAL_API_URL="http://127.0.0.1:8081"
 
 # Wait for telegram-bot-api to be ready
 sleep 3
