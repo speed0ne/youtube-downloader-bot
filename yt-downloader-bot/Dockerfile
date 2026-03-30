@@ -1,8 +1,9 @@
+ARG BUILD_FROM
+
 # Stage 1: grab pre-built telegram-bot-api binary
 FROM aiogram/telegram-bot-api:latest AS bot-api
 
 # Stage 2: actual add-on
-ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
 RUN apk add --no-cache \
