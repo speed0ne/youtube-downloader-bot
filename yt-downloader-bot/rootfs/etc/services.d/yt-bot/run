@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bashio
+
+# Wait for telegram-bot-api to be ready
+sleep 3
+
+cd /app
+exec python3 -m bot.main

@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bashio
+
+exec telegram-bot-api \
+    --api-id="${TELEGRAM_API_ID}" \
+    --api-hash="${TELEGRAM_API_HASH}" \
+    --local \
+    --http-port=8081

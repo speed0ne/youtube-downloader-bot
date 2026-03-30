@@ -10,7 +10,6 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     ffmpeg \
-    supervisor \
     libstdc++
 
 # Copy pre-built binary from the aiogram image
@@ -22,8 +21,6 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 COPY bot/ bot/
-COPY supervisord.conf /etc/supervisord.conf
-COPY run.sh /run.sh
-RUN chmod +x /run.sh
 
-CMD ["/run.sh"]
+# Copy s6-overlay service definitions
+COPY rootfs /
