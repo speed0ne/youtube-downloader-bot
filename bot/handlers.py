@@ -7,7 +7,7 @@ import shutil
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from bot.downloader import DownloadResult, download, download_audio, format_size, get_formats
+from bot.downloader import DownloadResult, download, download_audio, format_size, get_formats, get_stream_url
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     buttons.append(
         [InlineKeyboardButton("Audio only (MP3)", callback_data=f"dl:{url_id}:audio")]
     )
+    buttons.append(
+        [InlineKeyboardButton("Stream only", callback_data=f"dl:{url_id}:stream")]
+    )
 
     await status_msg.edit_text(
         "Choose format:", reply_markup=InlineKeyboardMarkup(buttons)
@@ -80,9 +83,23 @@ async def handle_quality_callback(
         await query.edit_message_text("Link expired. Please send the URL again.")
         return
 
-    await query.edit_message_text("Downloading...")
-
+    is_stream = height_str == "stream"
     is_audio = height_str == "audio"
+
+    if is_stream:
+        try:
+            stream_url = get_stream_url(url)
+            await query.edit_message_text(
+                f"Stream link (expires in a few hours):\n\n{stream_url}"
+            )
+        except Exception as e:
+            logger.error("Failed to get stream URL: %s", e)
+            await query.edit_message_text(f"Error: {e}")
+        finally:
+            context.bot_data.pop(f"url_{url_id}", None)
+        return
+
+    await query.edit_message_text("Downloading...")
 
     result: DownloadResult | None = None
     try:

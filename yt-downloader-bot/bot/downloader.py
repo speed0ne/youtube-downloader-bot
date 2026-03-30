@@ -63,6 +63,13 @@ def format_size(size_bytes: int | None) -> str:
     return f"{size_bytes / (1024 * 1024 * 1024):.1f}GB"
 
 
+def get_stream_url(url: str) -> str:
+    """Get a direct streamable URL (best pre-merged format)."""
+    with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "format": "b"}) as ydl:
+        info = ydl.extract_info(url, download=False)
+        return info["url"]
+
+
 def download_audio(url: str) -> DownloadResult:
     """Download audio only and return the path to an MP3 file."""
     download_dir = tempfile.mkdtemp(prefix="ytbot_")
