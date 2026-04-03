@@ -11,6 +11,21 @@ from bot.downloader import DownloadResult, download, download_audio, format_size
 
 logger = logging.getLogger(__name__)
 
+_raw = os.environ.get("ALLOWED_USERNAMES", "")
+ALLOWED_USERNAMES: set[str] = {
+    u.strip().lower().lstrip("@") for u in _raw.split(",") if u.strip()
+}
+
+
+def _is_user_allowed(update: Update) -> bool:
+    if not ALLOWED_USERNAMES:
+        return True
+    user = update.effective_user
+    if not user or not user.username:
+        return False
+    return user.username.lower() in ALLOWED_USERNAMES
+
+
 YOUTUBE_REGEX = re.compile(
     r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/)[\w\-]+"
 )
@@ -22,6 +37,9 @@ def _url_hash(url: str) -> str:
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming messages containing YouTube URLs."""
+    if not _is_user_allowed(update):
+        return
+
     text = update.message.text or ""
     match = YOUTUBE_REGEX.search(text)
     if not match:
@@ -71,6 +89,10 @@ async def handle_quality_callback(
 ) -> None:
     """Handle quality selection from inline keyboard."""
     query = update.callback_query
+    if not _is_user_allowed(update):
+        await query.answer()
+        return
+
     await query.answer()
 
     data = query.data

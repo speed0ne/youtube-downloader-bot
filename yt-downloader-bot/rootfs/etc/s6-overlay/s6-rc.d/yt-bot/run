@@ -2,6 +2,7 @@
 
 export BOT_TOKEN=$(bashio::config 'bot_token')
 export LOCAL_API_URL="http://127.0.0.1:8081"
+export ALLOWED_USERNAMES=$(bashio::config 'allowed_usernames | join(",")')
 
 # Wait for telegram-bot-api to be ready
 sleep 3

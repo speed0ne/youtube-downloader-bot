@@ -65,9 +65,16 @@ def format_size(size_bytes: int | None) -> str:
 
 def get_stream_url(url: str) -> str:
     """Get a direct streamable URL (best pre-merged format)."""
-    with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "format": "b"}) as ydl:
+    with yt_dlp.YoutubeDL({"quiet": True, "no_warnings": True, "format": "b/bv*+ba/b*"}) as ydl:
         info = ydl.extract_info(url, download=False)
-        return info["url"]
+        # Pre-merged formats have a direct url
+        if info.get("url"):
+            return info["url"]
+        # If merged, return the video stream url
+        for f in info.get("requested_formats", []):
+            if f.get("vcodec", "none") != "none":
+                return f["url"]
+        raise ValueError("No streamable URL found")
 
 
 def download_audio(url: str) -> DownloadResult:
