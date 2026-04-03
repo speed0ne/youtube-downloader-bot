@@ -1,0 +1,15 @@
+configuration:
+  bot_token:
+    name: Bot Token
+    description: Telegram Bot API token from @BotFather.
+  telegram_api_id:
+    name: Telegram API ID
+    description: Telegram API ID from my.telegram.org.
+  telegram_api_hash:
+    name: Telegram API Hash
+    description: Telegram API Hash from my.telegram.org.
+  allowed_usernames:
+    name: Allowed Usernames
+    description: >-
+      Telegram usernames allowed to use the bot, without the @ prefix
+      (e.g. "john_doe", "jane123"). Leave empty to allow everyone.

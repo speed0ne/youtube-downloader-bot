@@ -43,6 +43,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     text = update.message.text or ""
     match = YOUTUBE_REGEX.search(text)
     if not match:
+        await update.message.reply_text(
+            "Please send a valid YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)."
+        )
         return
 
     url = match.group(0)
