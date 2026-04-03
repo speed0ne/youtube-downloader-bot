@@ -64,8 +64,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
 
     url_id = _url_hash(url)
+
+    # Clean up previous pending link for this user
+    prev_url_id = context.user_data.get("pending_url_id")
+    if prev_url_id and prev_url_id != url_id:
+        context.bot_data.pop(f"url_{prev_url_id}", None)
+
     # Store URL in bot_data for callback retrieval
     context.bot_data[f"url_{url_id}"] = url
+    context.user_data["pending_url_id"] = url_id
 
     buttons = []
     for fmt in formats:
@@ -124,6 +131,8 @@ async def handle_quality_callback(
             await query.edit_message_text(f"Error: {e}")
         finally:
             context.bot_data.pop(f"url_{url_id}", None)
+        if context.user_data.get("pending_url_id") == url_id:
+            context.user_data.pop("pending_url_id", None)
         return
 
     await query.edit_message_text("Downloading... 0%")
@@ -199,3 +208,5 @@ async def handle_quality_callback(
             download_dir = os.path.dirname(result.filepath)
             shutil.rmtree(download_dir, ignore_errors=True)
         context.bot_data.pop(f"url_{url_id}", None)
+        if context.user_data.get("pending_url_id") == url_id:
+            context.user_data.pop("pending_url_id", None)

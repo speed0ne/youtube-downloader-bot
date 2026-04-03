@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.7
+
+- Clean up previous pending link when user sends a new YouTube URL
+
 ## 0.0.6
 
 - Show download progress percentage (updates every 10%)
