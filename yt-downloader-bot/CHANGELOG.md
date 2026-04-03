@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.9
+
+- Show separate progress for video and audio streams (e.g. "Downloading video... 60%", "Downloading audio... 30%")
+
 ## 0.0.8
 
 - Show encoding progress percentage during ffmpeg re-encode (video)

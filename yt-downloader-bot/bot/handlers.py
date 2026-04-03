@@ -135,10 +135,13 @@ async def handle_quality_callback(
             context.user_data.pop("pending_url_id", None)
         return
 
-    await query.edit_message_text("Downloading... 0%")
+    await query.edit_message_text(
+        "Downloading... 0%" if is_audio else "Downloading video... 0%"
+    )
 
     loop = asyncio.get_event_loop()
     last_update = {"text": "", "time": 0.0}
+    dl_state = {"part": 1}
 
     def _throttled_edit(text: str, min_interval: float = 2):
         now = time.monotonic()
@@ -150,6 +153,9 @@ async def handle_quality_callback(
             )
 
     def progress_hook(d):
+        if d["status"] == "finished":
+            dl_state["part"] += 1
+            return
         if d["status"] != "downloading":
             return
         total = d.get("total_bytes") or d.get("total_bytes_estimate")
@@ -157,7 +163,11 @@ async def handle_quality_callback(
             return
         pct = int(d["downloaded_bytes"] / total * 100)
         rounded = pct // 10 * 10
-        _throttled_edit(f"Downloading... {rounded}%")
+        if is_audio:
+            _throttled_edit(f"Downloading... {rounded}%")
+        else:
+            label = "video" if dl_state["part"] == 1 else "audio"
+            _throttled_edit(f"Downloading {label}... {rounded}%")
 
     def status_hook(msg: str):
         _throttled_edit(msg)
