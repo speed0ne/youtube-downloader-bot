@@ -77,9 +77,13 @@ def get_stream_url(url: str) -> str:
         raise ValueError("No streamable URL found")
 
 
-def download_audio(url: str, progress_hook=None) -> DownloadResult:
+def download_audio(url: str, progress_hook=None, status_hook=None) -> DownloadResult:
     """Download audio only and return the path to an MP3 file."""
     download_dir = tempfile.mkdtemp(prefix="ytbot_")
+
+    def _pp_hook(d):
+        if d["status"] == "started" and status_hook:
+            status_hook("Converting to MP3...")
 
     opts = {
         "format": "bestaudio/best",
@@ -93,6 +97,7 @@ def download_audio(url: str, progress_hook=None) -> DownloadResult:
         ],
         "quiet": True,
         "no_warnings": True,
+        "postprocessor_hooks": [_pp_hook],
     }
     if progress_hook:
         opts["progress_hooks"] = [progress_hook]
@@ -114,7 +119,7 @@ def download_audio(url: str, progress_hook=None) -> DownloadResult:
     raise FileNotFoundError("Audio extraction failed: no output file found")
 
 
-def download(url: str, height: int | None = None, progress_hook=None) -> DownloadResult:
+def download(url: str, height: int | None = None, progress_hook=None, status_hook=None) -> DownloadResult:
     """Download a video and return the path to the downloaded file.
 
     Uses bestvideo+bestaudio merge strategy, optionally capped at a resolution.
@@ -158,24 +163,45 @@ def download(url: str, height: int | None = None, progress_hook=None) -> Downloa
 
         # Re-encode to H.264/AAC with Telegram-compatible settings
         output_path = os.path.join(download_dir, "telegram_ready.mp4")
-        subprocess.run(
-            [
-                "ffmpeg", "-y", "-i", raw_path,
-                "-c:v", "libx264",
-                "-profile:v", "high",
-                "-level", "4.0",
-                "-pix_fmt", "yuv420p",
-                "-preset", "medium",
-                "-crf", "23",
-                "-g", "30",
-                "-c:a", "aac",
-                "-b:a", "128k",
-                "-movflags", "+faststart",
-                output_path,
-            ],
-            check=True,
-            capture_output=True,
-        )
+        duration_secs = info.get("duration") or 0
+
+        if status_hook:
+            status_hook("Encoding... 0%")
+
+        cmd = [
+            "ffmpeg", "-y", "-i", raw_path,
+            "-c:v", "libx264",
+            "-profile:v", "high",
+            "-level", "4.0",
+            "-pix_fmt", "yuv420p",
+            "-preset", "medium",
+            "-crf", "23",
+            "-g", "30",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-movflags", "+faststart",
+        ]
+        if status_hook and duration_secs:
+            cmd += ["-progress", "pipe:1"]
+        cmd.append(output_path)
+
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if status_hook and duration_secs and proc.stdout:
+            for line in proc.stdout:
+                line = line.decode(errors="replace").strip()
+                if line.startswith("out_time_us="):
+                    try:
+                        current_us = int(line.split("=", 1)[1])
+                        pct = min(int(current_us / (duration_secs * 1_000_000) * 100), 100)
+                        status_hook(f"Encoding... {pct}%")
+                    except ValueError:
+                        pass
+
+        proc.wait()
+        if proc.returncode != 0:
+            stderr = proc.stderr.read().decode(errors="replace") if proc.stderr else ""
+            raise subprocess.CalledProcessError(proc.returncode, "ffmpeg", stderr=stderr)
 
         # Remove the raw file, keep only the re-encoded one
         if raw_path != output_path:

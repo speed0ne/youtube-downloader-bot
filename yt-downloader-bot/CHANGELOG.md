@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.8
+
+- Show encoding progress percentage during ffmpeg re-encode (video)
+- Show "Converting to MP3..." status during audio post-processing
+- Unified throttled message editing for all progress phases
+
 ## 0.0.7
 
 - Clean up previous pending link when user sends a new YouTube URL

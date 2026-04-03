@@ -138,7 +138,16 @@ async def handle_quality_callback(
     await query.edit_message_text("Downloading... 0%")
 
     loop = asyncio.get_event_loop()
-    last_update = {"pct": 0, "time": 0.0}
+    last_update = {"text": "", "time": 0.0}
+
+    def _throttled_edit(text: str, min_interval: float = 2):
+        now = time.monotonic()
+        if text != last_update["text"] and now - last_update["time"] >= min_interval:
+            last_update["text"] = text
+            last_update["time"] = now
+            asyncio.run_coroutine_threadsafe(
+                query.edit_message_text(text), loop
+            )
 
     def progress_hook(d):
         if d["status"] != "downloading":
@@ -148,25 +157,21 @@ async def handle_quality_callback(
             return
         pct = int(d["downloaded_bytes"] / total * 100)
         rounded = pct // 10 * 10
-        now = time.monotonic()
-        if rounded > last_update["pct"] and now - last_update["time"] >= 2:
-            last_update["pct"] = rounded
-            last_update["time"] = now
-            asyncio.run_coroutine_threadsafe(
-                query.edit_message_text(f"Downloading... {rounded}%"),
-                loop,
-            )
+        _throttled_edit(f"Downloading... {rounded}%")
+
+    def status_hook(msg: str):
+        _throttled_edit(msg)
 
     result: DownloadResult | None = None
     try:
         if is_audio:
             result = await loop.run_in_executor(
-                None, lambda: download_audio(url, progress_hook=progress_hook)
+                None, lambda: download_audio(url, progress_hook=progress_hook, status_hook=status_hook)
             )
         else:
             height = int(height_str) if height_str != "best" else None
             result = await loop.run_in_executor(
-                None, lambda: download(url, height, progress_hook=progress_hook)
+                None, lambda: download(url, height, progress_hook=progress_hook, status_hook=status_hook)
             )
 
         filesize = os.path.getsize(result.filepath)
