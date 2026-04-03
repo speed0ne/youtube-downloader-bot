@@ -1,6 +1,7 @@
 import os
 import subprocess
 import tempfile
+import threading
 from dataclasses import dataclass
 
 import yt_dlp
@@ -187,6 +188,13 @@ def download(url: str, height: int | None = None, progress_hook=None, status_hoo
 
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+        # Drain stderr in a separate thread to prevent pipe buffer deadlock
+        stderr_chunks: list[bytes] = []
+        stderr_thread = threading.Thread(
+            target=lambda: stderr_chunks.append(proc.stderr.read())
+        )
+        stderr_thread.start()
+
         if status_hook and duration_secs and proc.stdout:
             for line in proc.stdout:
                 line = line.decode(errors="replace").strip()
@@ -198,9 +206,10 @@ def download(url: str, height: int | None = None, progress_hook=None, status_hoo
                     except ValueError:
                         pass
 
+        stderr_thread.join()
         proc.wait()
         if proc.returncode != 0:
-            stderr = proc.stderr.read().decode(errors="replace") if proc.stderr else ""
+            stderr = stderr_chunks[0].decode(errors="replace") if stderr_chunks else ""
             raise subprocess.CalledProcessError(proc.returncode, "ffmpeg", stderr=stderr)
 
         # Remove the raw file, keep only the re-encoded one

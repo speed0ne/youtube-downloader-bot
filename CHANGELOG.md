@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.10
+
+- Fix ffmpeg encoding hang caused by stderr pipe buffer deadlock
+
 ## 0.0.9
 
 - Show separate progress for video and audio streams (e.g. "Downloading video... 60%", "Downloading audio... 30%")
