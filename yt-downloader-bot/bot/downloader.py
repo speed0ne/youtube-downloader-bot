@@ -77,7 +77,7 @@ def get_stream_url(url: str) -> str:
         raise ValueError("No streamable URL found")
 
 
-def download_audio(url: str) -> DownloadResult:
+def download_audio(url: str, progress_hook=None) -> DownloadResult:
     """Download audio only and return the path to an MP3 file."""
     download_dir = tempfile.mkdtemp(prefix="ytbot_")
 
@@ -94,6 +94,8 @@ def download_audio(url: str) -> DownloadResult:
         "quiet": True,
         "no_warnings": True,
     }
+    if progress_hook:
+        opts["progress_hooks"] = [progress_hook]
 
     with yt_dlp.YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=True)
@@ -112,7 +114,7 @@ def download_audio(url: str) -> DownloadResult:
     raise FileNotFoundError("Audio extraction failed: no output file found")
 
 
-def download(url: str, height: int | None = None) -> str:
+def download(url: str, height: int | None = None, progress_hook=None) -> DownloadResult:
     """Download a video and return the path to the downloaded file.
 
     Uses bestvideo+bestaudio merge strategy, optionally capped at a resolution.
@@ -139,6 +141,8 @@ def download(url: str, height: int | None = None) -> str:
         "quiet": True,
         "no_warnings": True,
     }
+    if progress_hook:
+        opts["progress_hooks"] = [progress_hook]
 
     with yt_dlp.YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=True)

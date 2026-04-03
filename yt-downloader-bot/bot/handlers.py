@@ -1,8 +1,10 @@
+import asyncio
 import hashlib
 import logging
 import os
 import re
 import shutil
+import time
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
@@ -124,15 +126,39 @@ async def handle_quality_callback(
             context.bot_data.pop(f"url_{url_id}", None)
         return
 
-    await query.edit_message_text("Downloading...")
+    await query.edit_message_text("Downloading... 0%")
+
+    loop = asyncio.get_event_loop()
+    last_update = {"pct": 0, "time": 0.0}
+
+    def progress_hook(d):
+        if d["status"] != "downloading":
+            return
+        total = d.get("total_bytes") or d.get("total_bytes_estimate")
+        if not total:
+            return
+        pct = int(d["downloaded_bytes"] / total * 100)
+        rounded = pct // 10 * 10
+        now = time.monotonic()
+        if rounded > last_update["pct"] and now - last_update["time"] >= 2:
+            last_update["pct"] = rounded
+            last_update["time"] = now
+            asyncio.run_coroutine_threadsafe(
+                query.edit_message_text(f"Downloading... {rounded}%"),
+                loop,
+            )
 
     result: DownloadResult | None = None
     try:
         if is_audio:
-            result = download_audio(url)
+            result = await loop.run_in_executor(
+                None, lambda: download_audio(url, progress_hook=progress_hook)
+            )
         else:
             height = int(height_str) if height_str != "best" else None
-            result = download(url, height)
+            result = await loop.run_in_executor(
+                None, lambda: download(url, height, progress_hook=progress_hook)
+            )
 
         filesize = os.path.getsize(result.filepath)
         await query.edit_message_text(
