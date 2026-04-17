@@ -213,6 +213,14 @@ async def handle_quality_callback(
                     read_timeout=300,
                     write_timeout=300,
                 )
+        elif is_native:
+            with open(result.filepath, "rb") as video_file:
+                await context.bot.send_document(
+                    chat_id=query.message.chat_id,
+                    document=video_file,
+                    read_timeout=300,
+                    write_timeout=300,
+                )
         else:
             with open(result.filepath, "rb") as video_file:
                 await context.bot.send_video(

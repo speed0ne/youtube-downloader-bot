@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.13
+
+- Upload native-format downloads as document (file) instead of video, so Telegram does not try to play them inline
+
 ## 0.0.12
 
 - Add `build.yaml` with explicit `BUILD_FROM` base images (fixes build failure on recent Supervisor/buildx)
