@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.12
+
+- Add `build.yaml` with explicit `BUILD_FROM` base images (fixes build failure on recent Supervisor/buildx)
+
 ## 0.0.11
 
 - Add "Native format (no transcode)" option to download video without ffmpeg re-encode
