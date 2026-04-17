@@ -85,6 +85,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         [InlineKeyboardButton("Best quality", callback_data=f"dl:{url_id}:best")]
     )
     buttons.append(
+        [InlineKeyboardButton("Native format (no transcode)", callback_data=f"dl:{url_id}:native")]
+    )
+    buttons.append(
         [InlineKeyboardButton("Audio only (MP3)", callback_data=f"dl:{url_id}:audio")]
     )
     buttons.append(
@@ -119,6 +122,7 @@ async def handle_quality_callback(
 
     is_stream = height_str == "stream"
     is_audio = height_str == "audio"
+    is_native = height_str == "native"
 
     if is_stream:
         try:
@@ -179,9 +183,19 @@ async def handle_quality_callback(
                 None, lambda: download_audio(url, progress_hook=progress_hook, status_hook=status_hook)
             )
         else:
-            height = int(height_str) if height_str != "best" else None
+            if is_native:
+                height = None
+            else:
+                height = int(height_str) if height_str != "best" else None
             result = await loop.run_in_executor(
-                None, lambda: download(url, height, progress_hook=progress_hook, status_hook=status_hook)
+                None,
+                lambda: download(
+                    url,
+                    height,
+                    progress_hook=progress_hook,
+                    status_hook=status_hook,
+                    transcode=not is_native,
+                ),
             )
 
         filesize = os.path.getsize(result.filepath)

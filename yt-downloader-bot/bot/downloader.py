@@ -120,10 +120,17 @@ def download_audio(url: str, progress_hook=None, status_hook=None) -> DownloadRe
     raise FileNotFoundError("Audio extraction failed: no output file found")
 
 
-def download(url: str, height: int | None = None, progress_hook=None, status_hook=None) -> DownloadResult:
+def download(
+    url: str,
+    height: int | None = None,
+    progress_hook=None,
+    status_hook=None,
+    transcode: bool = True,
+) -> DownloadResult:
     """Download a video and return the path to the downloaded file.
 
     Uses bestvideo+bestaudio merge strategy, optionally capped at a resolution.
+    When transcode is False, returns the native yt-dlp output without ffmpeg re-encode.
     """
     download_dir = tempfile.mkdtemp(prefix="ytbot_")
 
@@ -161,6 +168,15 @@ def download(url: str, height: int | None = None, progress_hook=None, status_hoo
                 break
             else:
                 raise FileNotFoundError("Download failed: no output file found")
+
+        if not transcode:
+            return DownloadResult(
+                filepath=raw_path,
+                duration=info.get("duration"),
+                width=info.get("width"),
+                height=info.get("height"),
+                title=info.get("title"),
+            )
 
         # Re-encode to H.264/AAC with Telegram-compatible settings
         output_path = os.path.join(download_dir, "telegram_ready.mp4")

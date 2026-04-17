@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.11
+
+- Add "Native format (no transcode)" option to download video without ffmpeg re-encode
+
 ## 0.0.10
 
 - Fix ffmpeg encoding hang caused by stderr pipe buffer deadlock
